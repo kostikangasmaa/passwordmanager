@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Alert } from "react-native";
-import { Button, Text } from "@rneui/themed";
+import { StyleSheet, View, TextInput, Alert, Button, Text } from "react-native";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebaseConfig"; // Import the auth object
 
@@ -26,9 +25,7 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text h3 style={styles.title}>
-        {isSignUp ? "Sign Up" : "Login"}
-      </Text>
+      <Text style={styles.title}>{isSignUp ? "Sign Up" : "Login"}</Text>
       <TextInput
         placeholder="Email"
         value={email}
@@ -44,16 +41,20 @@ export default function Login() {
         style={styles.input}
         secureTextEntry
       />
-      <Button
-        title={isSignUp ? "Sign Up" : "Login"}
-        onPress={handleAuth}
-        buttonStyle={styles.button}
-      />
-      <Button
-        title={isSignUp ? "Switch to Login" : "Switch to Sign Up"}
-        onPress={() => setIsSignUp(!isSignUp)}
-        type="clear"
-      />
+      <View style={styles.buttonContainer}>
+        <Button
+          title={isSignUp ? "Sign Up" : "Login"}
+          onPress={handleAuth}
+          color="#007bff"
+        />
+      </View>
+      <View style={styles.buttonContainer}>
+        <Button
+          title={isSignUp ? "Switch to Login" : "Switch to Sign Up"}
+          onPress={() => setIsSignUp(!isSignUp)}
+          color="#28a745"
+        />
+      </View>
     </View>
   );
 }
@@ -68,6 +69,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 20,
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   input: {
     width: "100%",
@@ -77,9 +81,10 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 5,
   },
-  button: {
+  buttonContainer: {
     width: "100%",
-    backgroundColor: "#007bff",
-    marginBottom: 10,
+    marginVertical: 10, // Add spacing between buttons
+    borderRadius: 5, // Optional: Add rounded corners
+    overflow: "hidden", // Ensure the button fits within the rounded container
   },
 });
