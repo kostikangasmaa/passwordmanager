@@ -1,0 +1,22 @@
+import { initializeApp } from "firebase/app";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBtHimUoetARW0zvhJQQqqHI86B8SSR6yQ",
+    authDomain: "pilvi-react-b15e8.firebaseapp.com",
+    projectId: "pilvi-react-b15e8",
+    storageBucket: "pilvi-react-b15e8.firebasestorage.app",
+    messagingSenderId: "914477483142",
+    appId: "1:914477483142:web:14f991b04f20c7e2983d07",
+    measurementId: "G-NLS70S56RM"
+  };
+
+const app = initializeApp(firebaseConfig);
+
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
+
+export { auth };
+// getAuth() can be used any time after initialization
