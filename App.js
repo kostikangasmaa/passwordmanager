@@ -1,12 +1,20 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import Login from "./components/Login"; // Import the Login component
+import { StyleSheet } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Login from "./components/Login";
+import NewCredentials from "./components/NewCredentials";
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Login />
-    </View>
+    <NavigationContainer>
+      <Tab.Navigator initialRouteName="Login">
+        <Tab.Screen name="Login" component={Login} />
+        <Tab.Screen name="Add+" component={NewCredentials} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
 
