@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { StyleSheet, View, TextInput, Text, Switch, Button, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import Slider from "@react-native-community/slider";
-import { Ionicons } from "@expo/vector-icons"; // Import Ionicons for the eye icon
+import { Ionicons } from "@expo/vector-icons";
+import CryptoJS from "crypto-js";
+import { doc, setDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { db } from "../firebaseConfig";
 
 export default function NewCredentials() {
     const [serviceName, setServiceName] = useState("");
@@ -28,22 +32,56 @@ export default function NewCredentials() {
             setPassword(data[0].password); // Set the generated password
         } catch (error) {
             Alert.alert("Choose atleast one option to generate password");
-            setPassword(""); 
+            setPassword("");
         } finally {
             setLoading(false);
         }
     };
 
-    const saveCredentials = () => {
+    const saveCredentials = async () => {
+        const auth = getAuth(); // Get the Firebase Auth instance
+        const user = auth.currentUser; // Get the currently signed-in user
+
+        if (!user) {
+            Alert.alert("Error", "No user is signed in.");
+            return;
+        }
+        
+        const userEmail = user.email; // Get the user's email
+        
+
         if (!serviceName || !username || !password) {
             Alert.alert("Error", "Please fill in all fields and generate a password.");
             return;
         }
-        // Save the credentials (you can implement saving logic here)
-        Alert.alert("Success", `Credentials for ${serviceName} saved!`);
-        setServiceName("");
-        setUsername("");
-        setPassword("");
+        
+        const Key = CryptoJS.SHA256(user.uid).toString(); 
+        const combined = `${password}:${Key}`;
+        const encryptedPassword = btoa(combined); // Use btoa for Base64 encoding
+        console.log("Encrypted Password:", encryptedPassword);
+        const decoded = atob(encryptedPassword);
+        const [originalPassword, originalKey] = decoded.split(":");
+        console.log("Original Password:", originalPassword);
+//Jatka tää tästä 
+
+        const credentials = {
+            serviceName,
+            username,
+            password: encryptedPassword, // Save the encrypted password
+            createdAt: new Date(),
+        };
+        
+        try {
+            // Save the credentials under the user's email in Firestore
+            await setDoc(doc(db, "users", userEmail, "credentials", serviceName), credentials);
+            Alert.alert("Success", `Credentials for ${serviceName} saved!`);
+            setServiceName("");
+            setUsername("");
+            setPassword("");
+        } catch (error) {
+            Alert.alert("Error", "Failed to save credentials.");
+            console.error("Error saving credentials:", error);
+        }
     };
 
     return (
@@ -171,8 +209,8 @@ const styles = StyleSheet.create({
         height: 40,
     },
     buttonContainer: {
-        marginVertical: 5, 
-        borderRadius: 5, 
-        overflow: "hidden", 
-      },
+        marginVertical: 5,
+        borderRadius: 5,
+        overflow: "hidden",
+    },
 });
