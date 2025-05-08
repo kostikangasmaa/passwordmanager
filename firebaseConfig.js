@@ -2,9 +2,10 @@ import { initializeApp } from "firebase/app";
 import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBtHimUoetARW0zvhJQQqqHI86B8SSR6yQ",
+    apiKey: Constants.expoConfig.extra.firebaseApiKey,
     authDomain: "pilvi-react-b15e8.firebaseapp.com",
     projectId: "pilvi-react-b15e8",
     storageBucket: "pilvi-react-b15e8.firebasestorage.app",
