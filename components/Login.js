@@ -1,31 +1,40 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Alert, Button, Text } from "react-native";
+import { StyleSheet, View, TextInput, Button, Text } from "react-native";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig"; // Import the auth object
+import { auth } from "../firebaseConfig"; 
+import { Snackbar } from "react-native-paper";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
 
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  const showSnackbar = (message) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
   const handleAuth = async () => {
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
-        Alert.alert("Success", "Account created successfully!");
-        setIsSignUp(false); // Switch to login mode after signup
+        showSnackbar("Account created successfully!");
+        setIsSignUp(false); 
       } else {
         await signInWithEmailAndPassword(auth, email, password);
-        Alert.alert("Success", "Logged in successfully!");
+        showSnackbar("Logged in successfully!");
       }
     } catch (error) {
-      Alert.alert("Error", error.message);
+      showSnackbar(error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{isSignUp ? "Sign Up" : "Login"}</Text>
+      <Text style={styles.title}>{isSignUp ? "Sign Up" : "Password Manager"}</Text>
       <TextInput
         placeholder="Email"
         value={email}
@@ -50,11 +59,22 @@ export default function Login() {
       </View>
       <View style={styles.buttonContainer}>
         <Button
-          title={isSignUp ? "Switch to Login" : "Switch to Sign Up"}
+          title={isSignUp ? "Back to Login" : "Register for an Account"}
           onPress={() => setIsSignUp(!isSignUp)}
           color="#28a745"
         />
       </View>
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000} 
+        action={{
+          label: "OK",
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 }
@@ -83,8 +103,8 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     width: "100%",
-    marginVertical: 10, // Add spacing between buttons
-    borderRadius: 5, // Optional: Add rounded corners
-    overflow: "hidden", // Ensure the button fits within the rounded container
+    marginVertical: 10,
+    borderRadius: 5,
+    overflow: "hidden",
   },
 });
