@@ -54,7 +54,7 @@ A secure mobile password manager built with React Native and Firebase. Users can
 
 4. **Start the development server:**
    ```sh
-   npm start
+   npx expo start
    ```
    - Use Expo Go or an emulator to run the app.
 
