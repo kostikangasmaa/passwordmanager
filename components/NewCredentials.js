@@ -2,26 +2,53 @@ import React, { useState } from "react";
 import { StyleSheet, View, TextInput, Text, Switch, Button, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import Slider from "@react-native-community/slider";
 import { Ionicons } from "@expo/vector-icons";
-import CryptoJS from "crypto-js";
+
 import { doc, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebaseConfig";
+import { Snackbar } from "react-native-paper";
+import CryptoJS from "crypto-js";
+import aesjs from "aes-js";
 
 export default function NewCredentials() {
     const [serviceName, setServiceName] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+    const [showPassword, setShowPassword] = useState(false);
 
-    // Toggles for password options
+    
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+
+    
     const [includeSpecial, setIncludeSpecial] = useState(true);
     const [includeNumbers, setIncludeNumbers] = useState(true);
     const [includeLower, setIncludeLower] = useState(true);
     const [includeUpper, setIncludeUpper] = useState(true);
 
-    // State for password length
+    
     const [passwordLength, setPasswordLength] = useState(12);
+
+    
+    const evaluatePasswordStrength = (password) => {
+        let score = -1;
+        if (password.length >= 12) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[a-z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 1;
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+        return score;
+    };
+
+    const passwordStrength = evaluatePasswordStrength(password);
+    const strengthColors = ['#ff0000', '#ff8000', '#ffff00', '#80ff00', '#00ff00'];
+    const strengthLabels = ['Terrible', 'Weak', 'Medium', 'Strong', 'SUPAR Strong'];
+
+    const showSnackbar = (message) => {
+        setSnackbarMessage(message);
+        setSnackbarVisible(true);
+    };
 
     const generatePassword = async () => {
         setLoading(true);
@@ -29,57 +56,79 @@ export default function NewCredentials() {
             const url = `https://passwordwolf.com/api/?length=${passwordLength}&special=${includeSpecial ? "on" : "off"}&numbers=${includeNumbers ? "on" : "off"}&lower=${includeLower ? "on" : "off"}&upper=${includeUpper ? "on" : "off"}`;
             const response = await fetch(url);
             const data = await response.json();
-            setPassword(data[0].password); // Set the generated password
+            setPassword(data[0].password); 
         } catch (error) {
-            Alert.alert("Choose atleast one option to generate password");
+            showSnackbar("Choose at least one option to generate a password.");
             setPassword("");
         } finally {
             setLoading(false);
         }
     };
 
+    const encryptPassword = (password, hashedKey) => {
+        try {
+            // Convert password to bytes
+            const passwordBytes = aesjs.utils.utf8.toBytes(password);
+
+            // Convert hashed key (already SHA-256) to bytes
+            const keyBytes = aesjs.utils.hex.toBytes(hashedKey);
+
+            // Generate a random IV (Initialization Vector)
+            const iv = Array.from({ length: 16 }, () => Math.floor(Math.random() * 256));
+
+            // Encrypt the password using AES-CBC
+            const aesCbc = new aesjs.ModeOfOperation.cbc(keyBytes, iv);
+            const paddedPasswordBytes = aesjs.padding.pkcs7.pad(passwordBytes);
+            const encryptedBytes = aesjs.utils.hex.fromBytes(aesCbc.encrypt(paddedPasswordBytes));
+
+            // Convert IV to hex
+            const ivHex = aesjs.utils.hex.fromBytes(iv);
+
+            // Return a single string combining encrypted password and IV
+            return `${encryptedBytes}:${ivHex}`;
+        } catch (error) {
+            console.error("Error encrypting password:", error);
+            throw error;
+        }
+    };
+
     const saveCredentials = async () => {
-        const auth = getAuth(); // Get the Firebase Auth instance
-        const user = auth.currentUser; // Get the currently signed-in user
+        const auth = getAuth(); 
+        const user = auth.currentUser; 
 
         if (!user) {
-            Alert.alert("Error", "No user is signed in.");
+            showSnackbar("No user is signed in.");
             return;
         }
-        
-        const userEmail = user.email; // Get the user's email
-        
+
+        const userEmail = user.email; 
 
         if (!serviceName || !username || !password) {
-            Alert.alert("Error", "Please fill in all fields and generate a password.");
+            showSnackbar("Please fill in all fields and generate a password.");
             return;
         }
-        
-        const Key = CryptoJS.SHA256(user.uid).toString(); 
-        const combined = `${password}:${Key}`;
-        const encryptedPassword = btoa(combined); // Use btoa for Base64 encoding
-        console.log("Encrypted Password:", encryptedPassword);
-        const decoded = atob(encryptedPassword);
-        const [originalPassword, originalKey] = decoded.split(":");
-        console.log("Original Password:", originalPassword);
-//Jatka tää tästä 
+
+        const Key = CryptoJS.SHA256(user.uid).toString();
+        const encryptedPassword = encryptPassword(password, Key);
+        console.log(encryptedPassword)
+
 
         const credentials = {
             serviceName,
             username,
-            password: encryptedPassword, // Save the encrypted password
+            password: encryptedPassword, 
             createdAt: new Date(),
         };
-        
+
         try {
             // Save the credentials under the user's email in Firestore
             await setDoc(doc(db, "users", userEmail, "credentials", serviceName), credentials);
-            Alert.alert("Success", `Credentials for ${serviceName} saved!`);
+            showSnackbar(`Credentials for ${serviceName} saved!`);
             setServiceName("");
             setUsername("");
             setPassword("");
         } catch (error) {
-            Alert.alert("Error", "Failed to save credentials.");
+            showSnackbar("Failed to save credentials.");
             console.error("Error saving credentials:", error);
         }
     };
@@ -107,14 +156,20 @@ export default function NewCredentials() {
                 <TextInput
                     placeholder="Password"
                     value={password}
-                    onChangeText={setPassword} // Allow user to edit the password
+                    onChangeText={setPassword}
                     style={[styles.input, styles.passwordInput]}
-                    secureTextEntry={!showPassword} // Toggle secure text entry
+                    secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
                     <Ionicons name={showPassword ? "eye-off" : "eye"} size={24} color="gray" />
                 </TouchableOpacity>
             </View>
+            {password && (
+                <View style={styles.strengthContainer}>
+                    <Text>Strength: {strengthLabels[passwordStrength]}</Text>
+                    <View style={[styles.strengthBar, {backgroundColor: strengthColors[passwordStrength]}]} />
+                </View>
+            )}
             <View style={styles.switchContainer}>
                 <Text>Include Special Characters</Text>
                 <Switch value={includeSpecial} onValueChange={setIncludeSpecial} />
@@ -156,6 +211,17 @@ export default function NewCredentials() {
                     color="#28a745"
                 />
             </View>
+            <Snackbar
+                visible={snackbarVisible}
+                onDismiss={() => setSnackbarVisible(false)}
+                duration={3000}
+                action={{
+                    label: "OK",
+                    onPress: () => setSnackbarVisible(false),
+                }}
+            >
+                {snackbarMessage}
+            </Snackbar>
         </View>
     );
 }
@@ -202,7 +268,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     sliderContainer: {
-        marginVertical: 20,
+        marginVertical: 5,
     },
     slider: {
         width: "100%",
@@ -212,5 +278,13 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         borderRadius: 5,
         overflow: "hidden",
+    },
+    strengthContainer: {
+        marginVertical: 1,
+    },
+    strengthBar: {
+        height: 5,
+        borderRadius: 5,
+        marginTop: 5,
     },
 });
