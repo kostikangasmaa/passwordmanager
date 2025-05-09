@@ -15,6 +15,7 @@ A secure mobile password manager built with React Native and Firebase. Users can
 
 ## Technologies Used 🛠️
 
+- **PasswordWolf API** (for password generation) 🐺
 - **React Native** (with Expo) 📱
 - **Firebase Authentication** 🔥
 - **Firebase Firestore** 🗄️
