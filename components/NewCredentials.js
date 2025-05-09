@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { StyleSheet, View, TextInput, Text, Switch, Button, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import Slider from "@react-native-community/slider";
 import { Ionicons } from "@expo/vector-icons";
-
 import { doc, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../firebaseConfig";

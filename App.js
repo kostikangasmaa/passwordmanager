@@ -9,6 +9,7 @@ import Login from "./components/Login";
 import Logout from "./components/Logout";
 import NewCredentials from "./components/NewCredentials";
 import ListCredentials from "./components/ListCredentials";
+import { StatusBar } from 'expo-status-bar';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -65,6 +66,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
+      <StatusBar style="auto" />
       <Stack.Navigator>
         {isAuthenticated ? (
           <Stack.Screen
